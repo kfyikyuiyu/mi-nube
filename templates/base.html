@@ -306,6 +306,12 @@
                 <div class="nav-item" onclick="filterByType('comprimido')">
                     <span>📦</span> Comprimidos
                 </div>
+                <div class="nav-item" onclick="window.location.href='{{ url_for('favorites') }}'">
+                    <span>⭐</span> Favoritos
+                </div>
+                <div class="nav-item" onclick="window.location.href='{{ url_for('trash') }}'">
+                    <span>🗑️</span> Papelera
+                </div>
             </div>
 
             <div class="storage-card">

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Papelera{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+    <h2 style="font-size:1.3rem;font-weight:700;">🗑️ Papelera</h2>
+    <button onclick="emptyTrash()" style="padding:0.5rem 1rem;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;border-radius:10px;cursor:pointer;">Vaciar papelera</button>
+</div>
+<div class="file-table-wrap">
+    <div class="ft-head" style="grid-template-columns:2.5fr 0.8fr 1fr 130px;">
+        <div>Nombre</div><div>Tamaño</div><div>Eliminado</div><div>Acciones</div>
+    </div>
+    {% if files %}
+        {% for f in files %}
+        <div class="ft-row" id="row-{{f.id}}" style="grid-template-columns:2.5fr 0.8fr 1fr 130px;opacity:0.75;">
+            <div class="ft-name">
+                <span class="ft-ico">{% if f.file_type == 'imagen' %}🖼️{% elif f.file_type == 'video' %}🎬{% elif f.file_type == 'audio' %}🎵{% elif f.file_type == 'documento' %}📄{% elif f.file_type == 'comprimido' %}📦{% else %}📎{% endif %}</span>
+                <span style="text-decoration:line-through;color:#7a8aaa;">{{f.filename}}</span>
+            </div>
+            <div style="color:#7a8aaa;font-size:0.8rem;">{% set s=f.file_size %}{% if s<1024 %}{{s}} B{% elif s<1048576 %}{{(s/1024)|round(1)}} KB{% elif s<1073741824 %}{{(s/1048576)|round(1)}} MB{% else %}{{(s/1073741824)|round(2)}} GB{% endif %}</div>
+            <div style="color:#7a8aaa;font-size:0.8rem;">{{f.deleted_at.strftime('%d/%m/%Y') if f.deleted_at else '—'}}</div>
+            <div class="ft-actions">
+                <button class="fa-btn" onclick="restoreFile({{f.id}})">♻️ Restaurar</button>
+                <button class="fa-btn" onclick="deleteForever({{f.id}})" style="color:#fca5a5;">🔥</button>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state"><div style="font-size:3rem;margin-bottom:1rem">🗑️</div><h3>La papelera está vacía</h3><p style="color:#7a8aaa;">Los archivos eliminados aparecerán aquí</p></div>
+    {% endif %}
+</div>
+<style>
+.file-table-wrap{background:#151e2d;border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden}
+.ft-head{display:grid;padding:0.8rem 1.2rem;background:#0d1320;font-size:0.7rem;text-transform:uppercase;color:#7a8aaa;border-bottom:1px solid rgba(255,255,255,0.07)}
+.ft-row{display:grid;padding:0.8rem 1.2rem;align-items:center;border-bottom:1px solid rgba(255,255,255,0.05)}
+.ft-name{display:flex;align-items:center;gap:0.8rem}.ft-ico{font-size:1.5rem}
+.ft-actions{display:flex;gap:0.3rem;justify-content:flex-end}
+.fa-btn{background:transparent;border:none;cursor:pointer;font-size:0.85rem;padding:0.3rem 0.6rem;border-radius:6px;color:#e8edf5;transition:all 0.2s}
+.fa-btn:hover{background:rgba(255,255,255,0.1)}.empty-state{text-align:center;padding:3rem}
+</style>
+<script>
+async function restoreFile(id){const r=await fetch('/trash/restore/'+id,{method:'POST'});const d=await r.json();if(d.success){document.getElementById('row-'+id).remove();showToast('✅ Restaurado','success');}}
+async function deleteForever(id){if(!confirm('¿Eliminar para siempre?'))return;const r=await fetch('/trash/delete/'+id,{method:'POST'});const d=await r.json();if(d.success){document.getElementById('row-'+id).remove();showToast('🔥 Eliminado','success');}}
+async function emptyTrash(){if(!confirm('¿Vaciar toda la papelera?'))return;const r=await fetch('/trash/empty',{method:'POST'});const d=await r.json();if(d.success)location.reload();}
+</script>
+{% endblock %}

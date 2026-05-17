@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{file.filename}} — Mi Nube</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:sans-serif;background:#0a0c10;color:#e8edf5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem}
+        .card{background:#151e2d;border:1px solid #1e2a3a;border-radius:20px;padding:2.5rem;max-width:500px;width:100%;text-align:center}
+        .logo{font-size:1.2rem;font-weight:700;color:#60a5fa;margin-bottom:2rem}
+        .file-icon{font-size:4rem;margin-bottom:1rem}
+        .file-name{font-size:1.1rem;font-weight:600;word-break:break-word;margin-bottom:0.5rem}
+        .file-meta{font-size:0.8rem;color:#7a8aaa;margin-bottom:2rem}
+        .dl-btn{display:inline-block;background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;padding:0.8rem 2rem;border-radius:12px;text-decoration:none;font-weight:600}
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">☁️ Mi Nube</div>
+    <div class="file-icon">{% if file.file_type == 'imagen' %}🖼️{% elif file.file_type == 'video' %}🎬{% elif file.file_type == 'audio' %}🎵{% elif file.file_type == 'documento' %}📄{% elif file.file_type == 'comprimido' %}📦{% else %}📎{% endif %}</div>
+    <div class="file-name">{{file.filename}}</div>
+    <div class="file-meta">Compartido · {{(file.file_size/1048576)|round(1)}} MB</div>
+    <a href="/download/{{file.id}}" class="dl-btn">⬇️ Descargar</a>
+</div>
+</body>
+</html>

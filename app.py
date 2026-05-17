@@ -71,6 +71,10 @@ class File(db.Model):
     file_size = db.Column(db.BigInteger, nullable=False)
     upload_date = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    # --- NUEVOS CAMPOS ---
+    deleted_at = db.Column(db.DateTime, nullable=True)       # Papelera
+    is_favorite = db.Column(db.Boolean, default=False)       # Favoritos
+    share_token = db.Column(db.String(64), nullable=True)    # Compartir
 
 class AdminLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -80,6 +84,15 @@ class AdminLog(db.Model):
     target_user = db.Column(db.String(80), nullable=True)
     details = db.Column(db.Text, nullable=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class ShareLink(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    file_id = db.Column(db.Integer, db.ForeignKey('file.id'), nullable=False)
+    token = db.Column(db.String(64), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=True)
+    file = db.relationship('File', backref='share_links')
 
 # ==================== FUNCIONES ====================
 @login_manager.user_loader
@@ -332,6 +345,106 @@ def delete(file_id):
             return jsonify({'success': False, 'message': 'No autorizado'})
         flash('No autorizado', 'error')
         return redirect(url_for('dashboard'))
+    archivo.deleted_at = datetime.utcnow()
+    db.session.commit()
+    if request.method == 'POST':
+        return jsonify({'success': True, 'message': 'Archivo movido a la papelera'})
+    flash('Archivo movido a la papelera', 'success')
+    return redirect(url_for('dashboard'))
+
+@app.route('/trash')
+@login_required
+def trash():
+    archivos = File.query.filter_by(user_id=current_user.id).filter(File.deleted_at.isnot(None)).all()
+    return render_template('trash.html', user=current_user, files=archivos)
+
+@app.route('/trash/delete/<int:file_id>', methods=['POST'])
+@login_required
+def trash_delete(file_id):
+    archivo = File.query.get_or_404(file_id)
+    if archivo.user_id != current_user.id:
+        return jsonify({'success': False})
+    path = os.path.join(app.config['UPLOAD_FOLDER'], archivo.saved_name)
+    if os.path.exists(path):
+        os.remove(path)
+    db.session.delete(archivo)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/trash/restore/<int:file_id>', methods=['POST'])
+@login_required
+def trash_restore(file_id):
+    archivo = File.query.get_or_404(file_id)
+    if archivo.user_id != current_user.id:
+        return jsonify({'success': False})
+    archivo.deleted_at = None
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/trash/empty', methods=['POST'])
+@login_required
+def trash_empty():
+    archivos = File.query.filter_by(user_id=current_user.id).filter(File.deleted_at.isnot(None)).all()
+    for archivo in archivos:
+        path = os.path.join(app.config['UPLOAD_FOLDER'], archivo.saved_name)
+        if os.path.exists(path):
+            os.remove(path)
+        db.session.delete(archivo)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/favorites')
+@login_required
+def favorites():
+    archivos = File.query.filter_by(user_id=current_user.id, is_favorite=True).filter(File.deleted_at.is_(None)).all()
+    return render_template('favorites.html', user=current_user, files=archivos)
+
+@app.route('/toggle_favorite/<int:file_id>', methods=['POST'])
+@login_required
+def toggle_favorite(file_id):
+    archivo = File.query.get_or_404(file_id)
+    if archivo.user_id != current_user.id:
+        return jsonify({'success': False})
+    archivo.is_favorite = not archivo.is_favorite
+    db.session.commit()
+    return jsonify({'success': True, 'is_favorite': archivo.is_favorite})
+
+@app.route('/share/<int:file_id>', methods=['POST'])
+@login_required
+def share_file(file_id):
+    archivo = File.query.get_or_404(file_id)
+    if archivo.user_id != current_user.id:
+        return jsonify({'success': False})
+    if not archivo.share_token:
+        archivo.share_token = str(uuid.uuid4()).replace('-', '')
+        db.session.commit()
+    link = request.host_url + 'p/' + archivo.share_token
+    return jsonify({'success': True, 'link': link})
+
+@app.route('/unshare/<int:file_id>', methods=['POST'])
+@login_required
+def unshare_file(file_id):
+    archivo = File.query.get_or_404(file_id)
+    if archivo.user_id != current_user.id:
+        return jsonify({'success': False})
+    archivo.share_token = None
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/p/<token>')
+def public_file(token):
+    archivo = File.query.filter_by(share_token=token).first_or_404()
+    if archivo.deleted_at:
+        return "Archivo no disponible", 404
+    return render_template('public_file.html', file=archivo)
+
+@app.route('/preview/<int:file_id>')
+@login_required
+def preview(file_id):
+    archivo = File.query.get_or_404(file_id)
+    if archivo.user_id != current_user.id and not current_user.is_admin():
+        return "No autorizado", 403
+    return send_from_directory(app.config['UPLOAD_FOLDER'], archivo.saved_name)
     
     path = os.path.join(app.config['UPLOAD_FOLDER'], archivo.saved_name)
     if os.path.exists(path):
@@ -353,29 +466,28 @@ def delete(file_id):
 @app.route('/api/files')
 @login_required
 def api_files():
-    archivos = File.query.filter_by(user_id=current_user.id).order_by(File.upload_date.desc()).all()
-    
+    mostrar_papelera = request.args.get('trash') == '1'
+    mostrar_favoritos = request.args.get('favorites') == '1'
+    query = File.query.filter_by(user_id=current_user.id)
+    if mostrar_papelera:
+        query = query.filter(File.deleted_at.isnot(None))
+    elif mostrar_favoritos:
+        query = query.filter_by(is_favorite=True).filter(File.deleted_at.is_(None))
+    else:
+        query = query.filter(File.deleted_at.is_(None))
+    archivos = query.order_by(File.upload_date.desc()).all()
     def get_icon(tipo):
-        icons = {
-            'imagen': '🖼️',
-            'video': '🎬',
-            'audio': '🎵',
-            'documento': '📄',
-            'comprimido': '📦',
-            'otro': '📎'
-        }
+        icons = {'imagen':'🖼️','video':'🎬','audio':'🎵','documento':'📄','comprimido':'📦','otro':'📎'}
         return icons.get(tipo, '📎')
-    
     files_list = [{
-        'id': f.id,
-        'name': f.filename,
-        'size': format_file_size(f.file_size),
-        'sizeBytes': f.file_size,
-        'type': f.file_type,
-        'icon': get_icon(f.file_type),
-        'date': f.upload_date.strftime('%d/%m/%Y')
+        'id': f.id, 'name': f.filename,
+        'size': format_file_size(f.file_size), 'sizeBytes': f.file_size,
+        'type': f.file_type, 'icon': get_icon(f.file_type),
+        'date': f.upload_date.strftime('%d/%m/%Y'),
+        'is_favorite': f.is_favorite,
+        'deleted_at': f.deleted_at.strftime('%d/%m/%Y') if f.deleted_at else None,
+        'share_token': f.share_token
     } for f in archivos]
-    
     return jsonify({'files': files_list})
 
 # ==================== PANEL DE ADMINISTRACIÓN ====================
