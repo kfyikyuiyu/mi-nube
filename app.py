@@ -622,7 +622,6 @@ def admin_delete_user(user_id):
 
 # ==================== CREAR TABLAS ====================
 with app.app_context():
-    db.create_allwith app.app_context():with app.app_context():
     db.create_all()
     # Migración de columnas nuevas
     import sqlite3
