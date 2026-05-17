@@ -338,19 +338,29 @@
         <main class="main-content" {% if not current_user.is_authenticated %}style="margin-left:0"{% endif %}>
             <div class="top-bar" {% if not current_user.is_authenticated %}style="display:none"{% endif %}>
                 <h1 class="page-title" id="pageTitle">Mi nube</h1>
-                <div style="display: flex; gap: 0.8rem;">
+                <div style="display:flex;align-items:center;gap:0.6rem;">
                     <div class="search-box">
-                        <span>🔍</span>
+                        <span style="opacity:0.5;font-size:14px">🔍</span>
                         <input type="text" id="searchInput" placeholder="Buscar archivos..." oninput="searchFiles(this.value)">
                     </div>
-                    <button class="btn btn-outline" onclick="toggleView()" id="viewBtn">
+                    <button class="btn btn-outline" onclick="toggleView()" id="viewBtn" style="display:flex;align-items:center;gap:6px;font-size:13px;padding:0.5rem 0.9rem;border-radius:10px;border:1px solid #2d3a4a;color:#9ca3af;background:transparent;">
                         ⊞ Cuadrícula
                     </button>
                     {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('perfil') }}" class="btn btn-outline">👤 Mi Perfil</a>
-                        <a href="{{ url_for('logout') }}" class="btn btn-outline">🚪 Salir</a>
+                    <a href="{{ url_for('perfil') }}" style="display:flex;align-items:center;gap:6px;padding:0.5rem 0.9rem;border-radius:10px;border:1px solid #2d3a4a;color:#9ca3af;background:transparent;text-decoration:none;font-size:13px;font-weight:500;transition:all 0.2s;" onmouseover="this.style.background='#1e2a3a'" onmouseout="this.style.background='transparent'">
+                        <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;">{{ current_user.username[0].upper() }}</div>
+                        {{ current_user.username }}
+                    </a>
+                    <a href="{{ url_for('logout') }}" style="display:flex;align-items:center;gap:6px;padding:0.5rem 0.9rem;border-radius:10px;border:1px solid rgba(239,68,68,0.3);color:#fca5a5;background:transparent;text-decoration:none;font-size:13px;font-weight:500;transition:all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='transparent'">
+                        Salir
+                    </a>
+                    {% if current_user.is_admin() %}
+                    <a href="{{ url_for('admin_panel') }}" style="display:flex;align-items:center;gap:6px;padding:0.5rem 0.9rem;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;text-decoration:none;font-size:13px;font-weight:600;">
+                        👑 Admin
+                    </a>
                     {% endif %}
-                    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                    {% endif %}
+                    <button onclick="document.getElementById('fileInput').click()" style="display:flex;align-items:center;gap:6px;padding:0.5rem 1rem;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#6366f1);color:white;border:none;font-size:13px;font-weight:600;cursor:pointer;">
                         ⬆ Subir
                     </button>
                     <input type="file" id="fileInput" multiple style="display:none">
