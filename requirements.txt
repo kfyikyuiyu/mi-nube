@@ -1,6 +1,5 @@
-﻿flask
+flask
 flask-sqlalchemy
 flask-login
 werkzeug
 gunicorn
-pyIsEmail
