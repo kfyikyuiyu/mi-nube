@@ -185,6 +185,10 @@ def register():
         password = request.form.get('password')
         confirm = request.form.get('confirm_password')
         
+        from pyIsEmail import is_email
+        if is_email(email) is None:
+            flash('El correo electronico no existe o no es valido', 'error')
+            return render_template('register.html')
         if not username or not email or not password:
             flash('Todos los campos son obligatorios', 'error')
             return render_template('register.html')
