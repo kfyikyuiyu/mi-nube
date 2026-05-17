@@ -274,7 +274,7 @@
 <body>
     <div class="app-container">
         <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
+        <aside class="sidebar" id="sidebar" {% if not current_user.is_authenticated %}style="display:none"{% endif %}>
             <div class="logo">
                 <span>☁️</span> Mi Nube
             </div>
@@ -335,8 +335,8 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="main-content">
-            <div class="top-bar">
+        <main class="main-content" {% if not current_user.is_authenticated %}style="margin-left:0"{% endif %}>
+            <div class="top-bar" {% if not current_user.is_authenticated %}style="display:none"{% endif %}>
                 <h1 class="page-title" id="pageTitle">Mi nube</h1>
                 <div style="display: flex; gap: 0.8rem;">
                     <div class="search-box">
