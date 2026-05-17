@@ -1,0 +1,717 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="stats-row">
+    <div class="stat-card sc-blue">
+        <div class="stat-icon">📦</div>
+        <div class="stat-num" id="totalFiles">0</div>
+        <div class="stat-label">Archivos totales</div>
+    </div>
+    <div class="stat-card sc-purple">
+        <div class="stat-icon">☁️</div>
+        <div class="stat-num" id="totalSize">0 GB</div>
+        <div class="stat-label">Espacio usado</div>
+    </div>
+    <div class="stat-card sc-cyan">
+        <div class="stat-icon">🖼️</div>
+        <div class="stat-num" id="imagesCount">0</div>
+        <div class="stat-label">Imágenes</div>
+    </div>
+    <div class="stat-card sc-green">
+        <div class="stat-icon">📄</div>
+        <div class="stat-num" id="docsCount">0</div>
+        <div class="stat-label">Documentos</div>
+    </div>
+</div>
+
+<!-- Upload Zone -->
+<div class="upload-zone" id="uploadZone" ondragover="dragOver(event)" ondragleave="dragLeave()" ondrop="dropFiles(event)">
+    <div class="uz-icon">☁️</div>
+    <div class="uz-title">Arrastra archivos aquí o haz clic para subir</div>
+    <div class="uz-sub">Cualquier formato · Máx. 5 GB por archivo</div>
+</div>
+
+<!-- Upload Progress -->
+<div class="upload-progress" id="uploadProgress" style="display:none">
+    <div class="up-file">
+        <span id="upIcon" style="font-size:20px">📄</span>
+        <span class="up-name" id="upName">archivo…</span>
+        <button class="up-cancel" onclick="cancelUpload()">✕</button>
+    </div>
+    <div class="up-track">
+        <div class="up-fill" id="upFill"></div>
+    </div>
+    <div class="up-meta">
+        <span id="upSpeed">0 KB/s</span>
+        <span id="upPercent">0%</span>
+    </div>
+</div>
+
+<!-- Files Section -->
+<div class="sec-hdr">
+    <div class="sec-hdr-left">
+        <span class="sec-title">Archivos recientes</span>
+        <span class="sec-count" id="fileCount">0</span>
+    </div>
+    <div class="sec-actions">
+        <button class="view-btn active" id="listViewBtn" onclick="setView('list')">☰ Lista</button>
+        <button class="view-btn" id="gridViewBtn" onclick="setView('grid')">⊞ Cuadrícula</button>
+    </div>
+</div>
+
+<!-- List View -->
+<div id="listView">
+    <div class="file-table-wrap">
+        <div class="ft-head">
+            <div>Nombre</div>
+            <div>Tamaño</div>
+            <div>Subido</div>
+            <div>Tipo</div>
+            <div>Acciones</div>
+        </div>
+        <div id="listBody">
+            <div class="empty-state">
+                <div style="font-size:3rem;margin-bottom:1rem">📂</div>
+                <h3>No hay archivos</h3>
+                <p>Sube tu primer archivo arrastrándolo o haciendo clic arriba</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grid View -->
+<div id="gridView" style="display:none">
+    <div class="files-grid-view" id="gridBody">
+        <div class="empty-state">
+            <div style="font-size:3rem;margin-bottom:1rem">📂</div>
+            <h3>No hay archivos</h3>
+            <p>Sube tu primer archivo arrastrándolo o haciendo clic arriba</p>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Dashboard styles */
+.content {
+    padding: 1.5rem;
+}
+
+/* Botón de Admin Panel */
+.admin-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 0.5rem 1.2rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: bold;
+    margin-right: 1rem;
+    transition: all 0.3s;
+    border: none;
+    cursor: pointer;
+}
+
+.admin-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(245,158,11,0.4);
+}
+
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: #151e2d;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 1.25rem;
+    transition: all 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(59,130,246,0.3);
+}
+
+.stat-icon {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-num {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #60a5fa;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #7a8aaa;
+    margin-top: 0.3rem;
+}
+
+.upload-zone {
+    border: 2px dashed rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 1.5rem;
+    background: rgba(21,30,45,0.5);
+}
+
+.upload-zone:hover {
+    border-color: #3b82f6;
+    background: rgba(59,130,246,0.05);
+}
+
+.upload-zone.dragover {
+    border-color: #3b82f6;
+    background: rgba(59,130,246,0.1);
+}
+
+.uz-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.uz-title {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+}
+
+.uz-sub {
+    font-size: 0.8rem;
+    color: #7a8aaa;
+}
+
+.upload-progress {
+    background: #151e2d;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.up-file {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.8rem;
+}
+
+.up-name {
+    flex: 1;
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.up-cancel {
+    background: none;
+    border: none;
+    color: #7a8aaa;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.up-cancel:hover {
+    color: #ef4444;
+}
+
+.up-track {
+    height: 5px;
+    background: #0d1320;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.up-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #3b82f6, #06b6d4);
+    transition: width 0.1s linear;
+}
+
+.up-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: #7a8aaa;
+    margin-top: 0.5rem;
+}
+
+.sec-hdr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.sec-hdr-left {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.sec-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.sec-count {
+    background: rgba(59,130,246,0.15);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+}
+
+.sec-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.view-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    color: #7a8aaa;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.view-btn:hover, .view-btn.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+}
+
+.file-table-wrap {
+    background: #151e2d;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.ft-head {
+    display: grid;
+    grid-template-columns: 2.5fr 0.8fr 1fr 0.8fr 90px;
+    padding: 0.8rem 1.2rem;
+    background: #0d1320;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #7a8aaa;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.ft-row {
+    display: grid;
+    grid-template-columns: 2.5fr 0.8fr 1fr 0.8fr 90px;
+    padding: 0.8rem 1.2rem;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.2s;
+}
+
+.ft-row:hover {
+    background: rgba(59,130,246,0.05);
+}
+
+.ft-name {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.ft-ico {
+    font-size: 1.5rem;
+}
+
+.ft-size, .ft-date {
+    color: #7a8aaa;
+    font-size: 0.8rem;
+}
+
+.type-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+}
+
+.type-badge.imagen { background: rgba(34,197,94,0.15); color: #4ade80; }
+.type-badge.video { background: rgba(6,182,212,0.15); color: #22d3ee; }
+.type-badge.audio { background: rgba(139,92,246,0.15); color: #a78bfa; }
+.type-badge.documento { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.type-badge.comprimido { background: rgba(245,158,11,0.15); color: #fbbf24; }
+.type-badge.otro { background: rgba(156,163,175,0.15); color: #9ca3af; }
+
+.ft-actions {
+    display: flex;
+    gap: 0.3rem;
+    justify-content: flex-end;
+}
+
+.fa-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.3rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.fa-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.files-grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.fg-card {
+    background: #151e2d;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.fg-card:hover {
+    transform: translateY(-3px);
+    border-color: #3b82f6;
+}
+
+.fg-ico {
+    font-size: 2.5rem;
+}
+
+.fg-name {
+    font-size: 0.8rem;
+    margin: 0.5rem 0 0.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fg-size {
+    font-size: 0.7rem;
+    color: #7a8aaa;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.empty-state h3 {
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: #7a8aaa;
+}
+
+@media (max-width: 900px) {
+    .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .ft-head, .ft-row {
+        grid-template-columns: 2fr 0.8fr 1fr 0.8fr 70px;
+        font-size: 0.75rem;
+        padding: 0.6rem 0.8rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+    .ft-date, .ft-head div:nth-child(3) {
+        display: none;
+    }
+    .ft-head, .ft-row {
+        grid-template-columns: 2fr 0.8fr 0.8fr 70px;
+    }
+}
+</style>
+
+<script>
+    // ========== GLOBAL VARIABLES ==========
+    let currentView = 'list';
+    let currentFilter = 'all';
+    let currentSearch = '';
+    let files = [];
+    let uploadInterval = null;
+
+    // ========== LOAD FILES ==========
+    async function loadFiles() {
+        try {
+            const response = await fetch('/api/files');
+            const data = await response.json();
+            files = data.files || [];
+            renderFiles();
+            updateStats();
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    // ========== RENDER FILES ==========
+    function renderFiles() {
+        let filtered = [...files];
+        
+        if (currentSearch) {
+            filtered = filtered.filter(f => f.name.toLowerCase().includes(currentSearch.toLowerCase()));
+        }
+        
+        if (currentFilter !== 'all' && currentFilter !== 'recientes') {
+            filtered = filtered.filter(f => f.type === currentFilter);
+        }
+        
+        if (currentFilter === 'recientes') {
+            filtered = filtered.slice(0, 10);
+        }
+        
+        document.getElementById('fileCount').textContent = filtered.length;
+        
+        if (filtered.length === 0) {
+            const emptyHtml = `<div class="empty-state"><div style="font-size:3rem">📂</div><h3>No hay archivos</h3><p>Sube tu primer archivo</p></div>`;
+            document.getElementById('listBody').innerHTML = emptyHtml;
+            document.getElementById('gridBody').innerHTML = emptyHtml;
+            return;
+        }
+        
+        // List view
+        document.getElementById('listBody').innerHTML = filtered.map(file => `
+            <div class="ft-row">
+                <div class="ft-name">
+                    <span class="ft-ico">${file.icon}</span>
+                    <span>${file.name.length > 40 ? file.name.substring(0,40)+'...' : file.name}</span>
+                </div>
+                <div class="ft-size">${file.size}</div>
+                <div class="ft-date">${file.date}</div>
+                <div><span class="type-badge ${file.type}">${file.type}</span></div>
+                <div class="ft-actions">
+                    <button class="fa-btn" onclick="downloadFile(${file.id})">⬇️</button>
+                    <button class="fa-btn" onclick="deleteFile(${file.id})">🗑️</button>
+                </div>
+            </div>
+        `).join('');
+        
+        // Grid view
+        document.getElementById('gridBody').innerHTML = filtered.map(file => `
+            <div class="fg-card" onclick="downloadFile(${file.id})">
+                <div class="fg-ico">${file.icon}</div>
+                <div class="fg-name">${file.name.length > 20 ? file.name.substring(0,20)+'...' : file.name}</div>
+                <div class="fg-size">${file.size}</div>
+            </div>
+        `).join('');
+    }
+
+    // ========== UPDATE STATS ==========
+    function updateStats() {
+        const total = files.length;
+        const totalBytes = files.reduce((sum, f) => sum + (f.sizeBytes || 0), 0);
+        const totalGB = (totalBytes / (1024*1024*1024)).toFixed(1);
+        const images = files.filter(f => f.type === 'imagen').length;
+        const docs = files.filter(f => f.type === 'documento').length;
+        
+        document.getElementById('totalFiles').textContent = total;
+        document.getElementById('totalSize').textContent = `${totalGB} GB`;
+        document.getElementById('imagesCount').textContent = images;
+        document.getElementById('docsCount').textContent = docs;
+        
+        const usedPercent = (totalBytes / (5*1024*1024*1024)) * 100;
+        const storageFill = document.getElementById('storageFill');
+        const storagePct = document.getElementById('storagePct');
+        const usedSpace = document.getElementById('usedSpace');
+        
+        if (storageFill) storageFill.style.width = `${Math.min(usedPercent,100)}%`;
+        if (storagePct) storagePct.textContent = `${Math.round(usedPercent)}%`;
+        if (usedSpace) usedSpace.textContent = `${totalGB} GB`;
+    }
+
+    // ========== UPLOAD ==========
+    let isUploading = false;
+
+    async function uploadFiles(fileList) {
+        const filesArray = Array.from(fileList);
+        if (filesArray.length === 0) return;
+        if (isUploading) return;
+        isUploading = true;
+        
+        const progressDiv = document.getElementById('uploadProgress');
+        const upFill = document.getElementById('upFill');
+        const upName = document.getElementById('upName');
+        
+        progressDiv.style.display = 'block';
+        
+        for (const file of filesArray) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            upName.textContent = file.name;
+            upFill.style.width = '0%';
+            
+            let progress = 0;
+            uploadInterval = setInterval(() => {
+                if (progress < 90) {
+                    progress += 10;
+                    upFill.style.width = `${progress}%`;
+                }
+            }, 200);
+            
+            try {
+                const response = await fetch('/upload', { method: 'POST', body: formData });
+                const result = await response.json();
+                clearInterval(uploadInterval);
+                
+                if (result.success) {
+                    upFill.style.width = '100%';
+                    showToast(`✅ ${file.name} subido`, 'success');
+                    setTimeout(() => location.reload(), 800);
+                } else {
+                    showToast(`❌ Error: ${result.message}`, 'error');
+                    progressDiv.style.display = 'none';
+                }
+            } catch (error) {
+                clearInterval(uploadInterval);
+                showToast('❌ Error al subir', 'error');
+                progressDiv.style.display = 'none';
+            }
+        }
+        isUploading = false;
+    }
+
+    function cancelUpload() {
+        if (uploadInterval) clearInterval(uploadInterval);
+        document.getElementById('uploadProgress').style.display = 'none';
+    }
+
+    function downloadFile(id) {
+        window.location.href = `/download/${id}`;
+    }
+
+    async function deleteFile(id) {
+        if (confirm('¿Eliminar este archivo?')) {
+            try {
+                const response = await fetch(`/delete/${id}`, { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Archivo eliminado', 'success');
+                    location.reload();
+                }
+            } catch (error) {
+                showToast('Error al eliminar', 'error');
+            }
+        }
+    }
+
+    function filterByType(type) {
+        currentFilter = type;
+        document.getElementById('topbar-title').textContent = 
+            type === 'all' ? 'Mi nube' : 
+            type === 'imagen' ? 'Imágenes' :
+            type === 'video' ? 'Videos' :
+            type === 'audio' ? 'Música' :
+            type === 'documento' ? 'Documentos' : 'Mi nube';
+        renderFiles();
+    }
+
+    function filterRecent() {
+        currentFilter = 'recientes';
+        document.getElementById('topbar-title').textContent = 'Recientes';
+        renderFiles();
+    }
+
+    function searchFiles(query) {
+        currentSearch = query;
+        renderFiles();
+    }
+
+    function setView(view) {
+        currentView = view;
+        document.getElementById('listView').style.display = view === 'list' ? 'block' : 'none';
+        document.getElementById('gridView').style.display = view === 'grid' ? 'block' : 'none';
+        document.getElementById('listViewBtn').classList.toggle('active', view === 'list');
+        document.getElementById('gridViewBtn').classList.toggle('active', view === 'grid');
+    }
+
+    function toggleView() {
+        setView(currentView === 'list' ? 'grid' : 'list');
+    }
+
+    function dragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('dragover'); }
+    function dragLeave() { document.getElementById('uploadZone').classList.remove('dragover'); }
+    function dropFiles(e) { e.preventDefault(); dragLeave(); uploadFiles(e.dataTransfer.files); }
+
+    let toastTimeout;
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const icon = document.getElementById('toastIcon');
+        const msg = document.getElementById('toastMsg');
+        const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+        icon.textContent = icons[type] || '✓';
+        msg.textContent = message;
+        toast.classList.add('show');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // ========== FUNCIÓN PARA IR AL PANEL ADMIN ==========
+    function goToAdmin() {
+        window.location.href = '/admin';
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+        loadFiles();
+        setView('list');
+        
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        
+        if (uploadZone) {
+            uploadZone.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fileInput?.click();
+            });
+        }
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length === 0) return;
+                uploadFiles(e.target.files);
+                fileInput.value = '';
+            });
+        }
+        
+        // Agregar botón de Admin si el usuario es administrador
+        {% if current_user.is_admin() %}
+        const topBar = document.querySelector('.top-bar');
+        if (topBar) {
+            const adminBtn = document.createElement('a');
+            adminBtn.href = "{{ url_for('admin_panel') }}";
+            adminBtn.className = 'admin-btn';
+            adminBtn.innerHTML = '👑 Admin Panel';
+            adminBtn.style.cssText = 'display: inline-block; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 0.5rem 1.2rem; border-radius: 10px; text-decoration: none; font-weight: bold; margin-left: 1rem;';
+            const buttonsContainer = topBar.querySelector('div:last-child') || topBar;
+            buttonsContainer.appendChild(adminBtn);
+        }
+        {% endif %}
+    });
+</script>
+{% endblock %}

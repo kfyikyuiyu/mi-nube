@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Panel de Admin - Mi Nube</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a0c10;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            margin-bottom: 2rem;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: #1a2332;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+        .stat-label {
+            color: #9ca3af;
+            margin-top: 0.5rem;
+        }
+        .table-container {
+            background: #1a2332;
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #2d3a4a;
+            color: white;
+        }
+        th {
+            background: #0d1320;
+            color: #3b82f6;
+        }
+        .btn {
+            padding: 0.3rem 0.8rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+        .btn-view {
+            background: #3b82f6;
+            color: white;
+        }
+        .badge {
+            padding: 0.2rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+        }
+        .badge-admin { background: #3b82f6; }
+        .badge-user { background: #6b7280; }
+        .badge-owner { background: #f59e0b; }
+        .badge-banned { background: #ef4444; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('dashboard') }}" class="back-btn">← Volver al Dashboard</a>
+        <h1>👑 Panel de Administración</h1>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_users }}</div>
+                <div class="stat-label">Total Usuarios</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_files }}</div>
+                <div class="stat-label">Total Archivos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_admins }}</div>
+                <div class="stat-label">Administradores</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_banned }}</div>
+                <div class="stat-label">Usuarios Baneados</div>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Usuario</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Archivos</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            <span class="badge badge-{{ user.role }}">
+                                {{ user.role|upper }}
+                            </span>
+                        </td>
+                        <td>{{ user.files|length }}</td>
+                        <td>
+                            {% if user.is_banned_active() %}
+                                <span class="badge badge-banned">BANEADO</span>
+                            {% else %}
+                                <span class="badge badge-user">ACTIVO</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('admin_user_detail', user_id=user.id) }}" class="btn btn-view">Ver</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Detalles Usuario - Mi Nube</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a0c10;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #1a2332;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        h1 {
+            color: white;
+            margin-bottom: 1rem;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #2d3a4a;
+        }
+        .info-label {
+            color: #9ca3af;
+        }
+        .info-value {
+            color: white;
+            font-weight: bold;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 0.5rem;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-success {
+            background: #22c55e;
+            color: white;
+        }
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+        select, input {
+            padding: 0.5rem;
+            border-radius: 6px;
+            border: 1px solid #2d3a4a;
+            background: #0d1320;
+            color: white;
+            margin-right: 0.5rem;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('admin_panel') }}" class="back-btn">← Volver al Panel</a>
+        <h1>👤 {{ target_user.username }}</h1>
+        
+        <div class="card">
+            <h3 style="color:white">Información</h3>
+            <div class="info-row">
+                <span class="info-label">ID:</span>
+                <span class="info-value">{{ target_user.id }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value">{{ target_user.email }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Rol:</span>
+                <span class="info-value">{{ target_user.role|upper }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Archivos:</span>
+                <span class="info-value">{{ target_user.files|length }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Espacio usado:</span>
+                <span class="info-value">{{ total_space }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Registro:</span>
+                <span class="info-value">{{ target_user.created_at.strftime('%d/%m/%Y') }}</span>
+            </div>
+        </div>
+        
+        {% if current_user.is_owner() and not target_user.is_owner() %}
+        <div class="card">
+            <h3 style="color:white">Cambiar Rol</h3>
+            <form method="POST" action="{{ url_for('admin_change_role', user_id=target_user.id) }}">
+                <select name="role">
+                    <option value="user">Usuario</option>
+                    <option value="admin">Administrador</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Cambiar Rol</button>
+            </form>
+        </div>
+        {% endif %}
+        
+        {% if not target_user.is_banned_active() and not target_user.is_owner() %}
+        <div class="card">
+            <h3 style="color:white">Banear Usuario</h3>
+            <form method="POST" action="{{ url_for('admin_ban_user', user_id=target_user.id) }}">
+                <select name="ban_days" required>
+                    <option value="1">1 día</option>
+                    <option value="3">3 días</option>
+                    <option value="7">7 días</option>
+                    <option value="30">30 días</option>
+                </select>
+                <input type="text" name="ban_reason" placeholder="Razón" required>
+                <button type="submit" class="btn btn-danger">Banear</button>
+            </form>
+        </div>
+        {% endif %}
+        
+        {% if target_user.is_banned_active() %}
+        <div class="card">
+            <h3 style="color:white">Desbanear Usuario</h3>
+            <form method="POST" action="{{ url_for('admin_unban_user', user_id=target_user.id) }}">
+                <button type="submit" class="btn btn-success">Desbanear</button>
+            </form>
+        </div>
+        {% endif %}
+        
+        {% if current_user.is_owner() and not target_user.is_owner() %}
+        <div class="card">
+            <h3 style="color:#ef4444">Zona Peligrosa</h3>
+            <form method="POST" action="{{ url_for('admin_delete_user', user_id=target_user.id) }}" onsubmit="return confirm('¿Eliminar a {{ target_user.username }} y todos sus archivos?')">
+                <button type="submit" class="btn btn-danger">Eliminar Usuario</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mi Perfil - Mi Nube</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a0c10;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #1a2332;
+            border-radius: 16px;
+            padding: 2rem;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+        }
+        .info {
+            color: white;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #0d1320;
+            border-radius: 10px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        .btn-danger {
+            background: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👤 Mi Perfil</h1>
+        
+        <div class="info">
+            <p><strong>Usuario:</strong> {{ user.username }}</p>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Miembro desde:</strong> {{ user.created_at.strftime('%d/%m/%Y') if user.created_at else 'Nuevo' }}</p>
+        </div>
+        
+        <a href="{{ url_for('dashboard') }}" class="btn">📁 Volver a mis archivos</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-danger">🚪 Cerrar sesión</a>
+    </div>
+</body>
+</html>

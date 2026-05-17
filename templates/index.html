@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <div class="hero-badge">
+            <span>✨ Almacenamiento en la nube</span>
+        </div>
+        <h1 class="hero-title">
+            Tus archivos,<br>
+            <span class="gradient-text">en cualquier lugar</span>
+        </h1>
+        <p class="hero-description">
+            Sube, organiza y comparte tus archivos de forma segura.<br>
+            Accede desde cualquier dispositivo, en cualquier momento.
+        </p>
+        
+        <div class="hero-buttons">
+            <a href="{{ url_for('register') }}" class="btn-primary-large">
+                🚀 Comenzar gratis
+            </a>
+            <a href="{{ url_for('login') }}" class="btn-secondary-large">
+                🔐 Iniciar sesión
+            </a>
+        </div>
+        
+        <div class="hero-stats">
+            <div class="stat">
+                <div class="stat-number">5 GB</div>
+                <div class="stat-label">Almacenamiento gratis</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">∞</div>
+                <div class="stat-label">Sin límite de formatos</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">🔒</div>
+                <div class="stat-label">Encriptación segura</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="hero-image">
+        <div class="floating-card card-1">
+            <span>📄</span> Documento.pdf
+        </div>
+        <div class="floating-card card-2">
+            <span>🖼️</span> Imagen.jpg
+        </div>
+        <div class="floating-card card-3">
+            <span>🎬</span> Video.mp4
+        </div>
+        <div class="floating-card card-4">
+            <span>📦</span> Archivo.zip
+        </div>
+    </div>
+</div>
+
+<div class="features-section">
+    <h2 class="section-title">¿Por qué elegir <span class="gradient-text">Mi Nube</span>?</h2>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">☁️</div>
+            <h3>Acceso desde cualquier lugar</h3>
+            <p>Tus archivos disponibles en tu móvil, tablet o computadora</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <h3>Seguro y encriptado</h3>
+            <p>Tus archivos están protegidos con encriptación de alto nivel</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Subida rápida</h3>
+            <p>Soporte para archivos de hasta 5GB con velocidad optimizada</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📁</div>
+            <h3>Todos los formatos</h3>
+            <p>Sin restricciones: imágenes, videos, documentos, y más</p>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Hero Section */
+.hero-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3rem;
+    padding: 2rem 0 4rem;
+    flex-wrap: wrap;
+}
+
+.hero-content {
+    flex: 1;
+    min-width: 300px;
+}
+
+.hero-badge {
+    display: inline-block;
+    background: rgba(59,130,246,0.15);
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(59,130,246,0.3);
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+}
+
+.gradient-text {
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-description {
+    font-size: 1.1rem;
+    color: #9ca3af;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.btn-primary-large {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    padding: 0.8rem 1.8rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary-large:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(59,130,246,0.4);
+}
+
+.btn-secondary-large {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: 1px solid #2d3a4a;
+    color: #e8edf5;
+    padding: 0.8rem 1.8rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-secondary-large:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: #3b82f6;
+}
+
+.hero-stats {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #60a5fa;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+/* Hero Image / Floating Cards */
+.hero-image {
+    flex: 1;
+    position: relative;
+    min-width: 280px;
+    height: 300px;
+}
+
+.floating-card {
+    position: absolute;
+    background: #1a2332;
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    backdrop-filter: blur(10px);
+    animation: float 3s ease-in-out infinite;
+}
+
+.card-1 {
+    top: 0;
+    left: 0;
+    animation-delay: 0s;
+}
+.card-2 {
+    top: 60px;
+    right: 0;
+    animation-delay: 0.5s;
+}
+.card-3 {
+    bottom: 40px;
+    left: 50px;
+    animation-delay: 1s;
+}
+.card-4 {
+    bottom: 100px;
+    right: 50px;
+    animation-delay: 1.5s;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+/* Features Section */
+.features-section {
+    padding: 4rem 0;
+    text-align: center;
+}
+
+.section-title {
+    font-size: 2rem;
+    margin-bottom: 3rem;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.feature-card {
+    background: #1a2332;
+    border: 1px solid #2d3a4a;
+    border-radius: 20px;
+    padding: 2rem;
+    transition: all 0.3s;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    border-color: #3b82f6;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.feature-card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.8rem;
+}
+
+.feature-card p {
+    color: #9ca3af;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .hero-title {
+        font-size: 2rem;
+    }
+    
+    .hero-buttons {
+        justify-content: center;
+    }
+    
+    .hero-stats {
+        justify-content: center;
+    }
+    
+    .hero-image {
+        display: none;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
