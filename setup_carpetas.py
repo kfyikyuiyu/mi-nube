@@ -1,0 +1,288 @@
+import os
+
+# ===== CREAR carpetas.html =====
+carpetas_html = """{% extends "base.html" %}
+{% block title %}Carpetas{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+    <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;color:#7a8aaa;">
+        <span onclick="window.location.href='/dashboard'" style="cursor:pointer;color:#60a5fa;">Mi nube</span>
+        {% if folder %}
+            <span>›</span>
+            <span style="color:#e8edf5;">{{ folder.name }}</span>
+        {% endif %}
+    </div>
+    <div style="display:flex;gap:0.5rem;">
+        <button onclick="showNewFolder()" style="padding:0.5rem 1rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:10px;cursor:pointer;">📁 Nueva carpeta</button>
+    </div>
+</div>
+
+<!-- Modal nueva carpeta -->
+<div id="newFolderModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#151e2d;border:1px solid #1e2a3a;border-radius:16px;padding:2rem;width:400px;">
+        <h3 style="margin-bottom:1rem;">📁 Nueva carpeta</h3>
+        <input id="folderNameInput" type="text" placeholder="Nombre de la carpeta" style="width:100%;padding:0.7rem;background:#0d1320;border:1px solid #2d3a4a;border-radius:10px;color:#e8edf5;font-size:0.9rem;margin-bottom:1rem;outline:none;">
+        <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+            <button onclick="closeNewFolder()" style="padding:0.5rem 1rem;background:transparent;border:1px solid #2d3a4a;color:#9ca3af;border-radius:8px;cursor:pointer;">Cancelar</button>
+            <button onclick="createFolder()" style="padding:0.5rem 1rem;background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;color:white;border-radius:8px;cursor:pointer;font-weight:600;">Crear</button>
+        </div>
+    </div>
+</div>
+
+<!-- Carpetas -->
+{% if folders %}
+<div style="margin-bottom:1.5rem;">
+    <div style="font-size:0.75rem;color:#7a8aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.8rem;">Carpetas</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;">
+        {% for f in folders %}
+        <div class="folder-card" onclick="window.location.href='/folders/{{ f.id }}'">
+            <div style="font-size:2.5rem;margin-bottom:0.5rem;">📁</div>
+            <div style="font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.name }}</div>
+            <div style="font-size:0.7rem;color:#7a8aaa;margin-top:0.3rem;">{{ f.files|length }} archivos</div>
+            <button onclick="event.stopPropagation();deleteFolder({{ f.id }})" style="position:absolute;top:0.5rem;right:0.5rem;background:none;border:none;cursor:pointer;opacity:0;transition:opacity 0.2s;font-size:0.9rem;" class="folder-del-btn">🗑️</button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Archivos -->
+<div>
+    <div style="font-size:0.75rem;color:#7a8aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.8rem;">Archivos</div>
+    <div class="file-table-wrap">
+        <div class="ft-head" style="grid-template-columns:2.5fr 0.8fr 1fr 0.8fr 120px;">
+            <div>Nombre</div><div>Tamaño</div><div>Fecha</div><div>Tipo</div><div>Acciones</div>
+        </div>
+        {% if files %}
+            {% for f in files %}
+            <div class="ft-row" id="row-{{f.id}}" style="grid-template-columns:2.5fr 0.8fr 1fr 0.8fr 120px;">
+                <div class="ft-name">
+                    <span class="ft-ico">{% if f.file_type == 'imagen' %}🖼️{% elif f.file_type == 'video' %}🎬{% elif f.file_type == 'audio' %}🎵{% elif f.file_type == 'documento' %}📄{% elif f.file_type == 'comprimido' %}📦{% else %}📎{% endif %}</span>
+                    <span>{{f.filename}}</span>
+                </div>
+                <div style="color:#7a8aaa;font-size:0.8rem;">{% set s=f.file_size %}{% if s<1024 %}{{s}} B{% elif s<1048576 %}{{(s/1024)|round(1)}} KB{% elif s<1073741824 %}{{(s/1048576)|round(1)}} MB{% else %}{{(s/1073741824)|round(2)}} GB{% endif %}</div>
+                <div style="color:#7a8aaa;font-size:0.8rem;">{{f.upload_date.strftime('%d/%m/%Y')}}</div>
+                <div><span class="type-badge {{f.file_type}}">{{f.file_type}}</span></div>
+                <div class="ft-actions">
+                    <button class="fa-btn" onclick="window.location='/download/{{f.id}}'">⬇️</button>
+                    <button class="fa-btn" onclick="moveFile({{f.id}})">📂</button>
+                    <button class="fa-btn" onclick="trashFile({{f.id}})">🗑️</button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state"><div style="font-size:3rem;margin-bottom:1rem">📂</div><h3>Carpeta vacía</h3><p style="color:#7a8aaa;">Mueve archivos aquí desde el dashboard</p></div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal mover archivo -->
+<div id="moveModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#151e2d;border:1px solid #1e2a3a;border-radius:16px;padding:2rem;width:400px;">
+        <h3 style="margin-bottom:1rem;">📂 Mover a carpeta</h3>
+        <div id="folderList" style="max-height:300px;overflow-y:auto;"></div>
+        <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:1rem;">
+            <button onclick="closeMoveModal()" style="padding:0.5rem 1rem;background:transparent;border:1px solid #2d3a4a;color:#9ca3af;border-radius:8px;cursor:pointer;">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.folder-card{position:relative;background:#151e2d;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:1rem;text-align:center;cursor:pointer;transition:all 0.2s;}
+.folder-card:hover{transform:translateY(-3px);border-color:#3b82f6;}
+.folder-card:hover .folder-del-btn{opacity:1!important;}
+.file-table-wrap{background:#151e2d;border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden}
+.ft-head{display:grid;padding:0.8rem 1.2rem;background:#0d1320;font-size:0.7rem;text-transform:uppercase;color:#7a8aaa;border-bottom:1px solid rgba(255,255,255,0.07)}
+.ft-row{display:grid;padding:0.8rem 1.2rem;align-items:center;border-bottom:1px solid rgba(255,255,255,0.05);transition:background 0.2s}
+.ft-row:hover{background:rgba(59,130,246,0.05)}.ft-name{display:flex;align-items:center;gap:0.8rem}.ft-ico{font-size:1.5rem}
+.ft-actions{display:flex;gap:0.3rem;justify-content:flex-end}
+.fa-btn{background:transparent;border:none;cursor:pointer;font-size:1rem;padding:0.3rem;border-radius:6px;transition:all 0.2s}
+.fa-btn:hover{background:rgba(255,255,255,0.1)}
+.type-badge{display:inline-block;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.7rem}
+.type-badge.imagen{background:rgba(34,197,94,0.15);color:#4ade80}.type-badge.video{background:rgba(6,182,212,0.15);color:#22d3ee}
+.type-badge.audio{background:rgba(139,92,246,0.15);color:#a78bfa}.type-badge.documento{background:rgba(59,130,246,0.15);color:#60a5fa}
+.type-badge.comprimido{background:rgba(245,158,11,0.15);color:#fbbf24}.type-badge.otro{background:rgba(156,163,175,0.15);color:#9ca3af}
+.empty-state{text-align:center;padding:3rem}
+</style>
+
+<script>
+let moveFileId = null;
+
+function showNewFolder(){document.getElementById('newFolderModal').style.display='flex';document.getElementById('folderNameInput').focus();}
+function closeNewFolder(){document.getElementById('newFolderModal').style.display='none';document.getElementById('folderNameInput').value='';}
+
+async function createFolder(){
+    const name = document.getElementById('folderNameInput').value.trim();
+    if(!name)return;
+    const r = await fetch('/folders/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+    const d = await r.json();
+    if(d.success){closeNewFolder();location.reload();}
+    else showToast('Error al crear carpeta','error');
+}
+
+async function deleteFolder(id){
+    if(!confirm('¿Eliminar carpeta? Los archivos volverán al inicio.'))return;
+    const r = await fetch('/folders/delete/'+id,{method:'POST'});
+    const d = await r.json();
+    if(d.success)location.reload();
+}
+
+async function moveFile(id){
+    moveFileId = id;
+    const r = await fetch('/api/folders');
+    const d = await r.json();
+    const list = document.getElementById('folderList');
+    if(d.folders.length === 0){
+        list.innerHTML='<p style="color:#7a8aaa;text-align:center;padding:1rem;">No tienes carpetas. Crea una primero.</p>';
+    } else {
+        list.innerHTML = d.folders.map(f=>`
+            <div onclick="doMove(${f.id})" style="padding:0.8rem;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:0.8rem;transition:background 0.2s;" onmouseover="this.style.background='rgba(59,130,246,0.1)'" onmouseout="this.style.background='transparent'">
+                <span style="font-size:1.5rem;">📁</span>
+                <span>${f.name}</span>
+            </div>
+        `).join('');
+    }
+    document.getElementById('moveModal').style.display='flex';
+}
+
+async function doMove(folderId){
+    const r = await fetch('/files/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file_id:moveFileId,folder_id:folderId})});
+    const d = await r.json();
+    if(d.success){closeMoveModal();showToast('📂 Archivo movido','success');setTimeout(()=>location.reload(),800);}
+}
+
+function closeMoveModal(){document.getElementById('moveModal').style.display='none';moveFileId=null;}
+
+async function trashFile(id){
+    if(!confirm('¿Mover a la papelera?'))return;
+    const r = await fetch('/delete/'+id,{method:'POST'});
+    const d = await r.json();
+    if(d.success){document.getElementById('row-'+id).remove();showToast('🗑️ Movido a papelera','success');}
+}
+
+document.getElementById('folderNameInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')createFolder();});
+</script>
+{% endblock %}"""
+
+with open('templates/carpetas.html', 'w', encoding='utf-8') as f:
+    f.write(carpetas_html)
+print("✅ carpetas.html creado")
+
+# ===== AGREGAR RUTAS DE CARPETAS A app.py =====
+with open('app.py', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+new_routes = """
+# ==================== CARPETAS ====================
+class Folder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    files = db.relationship('File', backref='folder', lazy=True)
+
+# Agregar folder_id a File si no existe
+"""
+
+# Agregar folder_id al modelo File
+old_share = "    share_token = db.Column(db.String(64), nullable=True)"
+new_share = """    share_token = db.Column(db.String(64), nullable=True)
+    folder_id = db.Column(db.Integer, db.ForeignKey('folder.id'), nullable=True)"""
+
+if old_share in content and 'folder_id' not in content:
+    content = content.replace(old_share, new_share)
+    print("✅ folder_id agregado al modelo File")
+else:
+    print("⚠️ folder_id ya existe o no encontré share_token")
+
+# Agregar modelo Folder y rutas antes del panel admin
+folder_routes = """
+# ==================== CARPETAS ====================
+class Folder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+@app.route('/folders')
+@login_required
+def folders():
+    carpetas = Folder.query.filter_by(user_id=current_user.id).all()
+    archivos = File.query.filter_by(user_id=current_user.id, folder_id=None).filter(File.deleted_at.is_(None)).all()
+    return render_template('carpetas.html', user=current_user, folders=carpetas, files=archivos, folder=None)
+
+@app.route('/folders/<int:folder_id>')
+@login_required
+def folder_view(folder_id):
+    carpeta = Folder.query.get_or_404(folder_id)
+    if carpeta.user_id != current_user.id:
+        return redirect(url_for('dashboard'))
+    subcarpetas = Folder.query.filter_by(user_id=current_user.id).all()
+    archivos = File.query.filter_by(user_id=current_user.id, folder_id=folder_id).filter(File.deleted_at.is_(None)).all()
+    return render_template('carpetas.html', user=current_user, folders=[], files=archivos, folder=carpeta)
+
+@app.route('/folders/create', methods=['POST'])
+@login_required
+def folder_create():
+    data = request.get_json()
+    name = data.get('name', '').strip()
+    if not name:
+        return jsonify({'success': False})
+    carpeta = Folder(name=name, user_id=current_user.id)
+    db.session.add(carpeta)
+    db.session.commit()
+    return jsonify({'success': True, 'id': carpeta.id})
+
+@app.route('/folders/delete/<int:folder_id>', methods=['POST'])
+@login_required
+def folder_delete(folder_id):
+    carpeta = Folder.query.get_or_404(folder_id)
+    if carpeta.user_id != current_user.id:
+        return jsonify({'success': False})
+    File.query.filter_by(folder_id=folder_id).update({'folder_id': None})
+    db.session.delete(carpeta)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/folders')
+@login_required
+def api_folders():
+    carpetas = Folder.query.filter_by(user_id=current_user.id).all()
+    return jsonify({'folders': [{'id': f.id, 'name': f.name} for f in carpetas]})
+
+@app.route('/files/move', methods=['POST'])
+@login_required
+def file_move():
+    data = request.get_json()
+    file_id = data.get('file_id')
+    folder_id = data.get('folder_id')
+    archivo = File.query.get_or_404(file_id)
+    if archivo.user_id != current_user.id:
+        return jsonify({'success': False})
+    archivo.folder_id = folder_id
+    db.session.commit()
+    return jsonify({'success': True})
+
+"""
+
+marker = "# ==================== PANEL DE ADMINISTRACIÓN ===================="
+if 'class Folder' not in content:
+    content = content.replace(marker, folder_routes + marker)
+    print("✅ Rutas de carpetas agregadas")
+else:
+    print("⚠️ Carpetas ya existen")
+
+# Agregar migración de folder_id a la base de datos
+old_migration = "for col, tipo in [('deleted_at','DATETIME'),('is_favorite','BOOLEAN DEFAULT 0'),('share_token','VARCHAR(64)')]:"
+new_migration = "for col, tipo in [('deleted_at','DATETIME'),('is_favorite','BOOLEAN DEFAULT 0'),('share_token','VARCHAR(64)'),('folder_id','INTEGER')]:"
+
+if old_migration in content:
+    content = content.replace(old_migration, new_migration)
+    print("✅ Migración de folder_id agregada")
+
+with open('app.py', 'w', encoding='utf-8') as f:
+    f.write(content)
+print("💾 app.py guardado")
+
+print()
+print("🎉 ¡Listo! Ahora actualiza base.html manualmente y corre actualizar_pagina.bat")

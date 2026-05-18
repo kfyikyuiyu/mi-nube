@@ -74,7 +74,8 @@ class File(db.Model):
     # --- NUEVOS CAMPOS ---
     deleted_at = db.Column(db.DateTime, nullable=True)       # Papelera
     is_favorite = db.Column(db.Boolean, default=False)       # Favoritos
-    share_token = db.Column(db.String(64), nullable=True)    # Compartir
+    share_token = db.Column(db.String(64), nullable=True)
+    folder_id = db.Column(db.Integer, db.ForeignKey('folder.id'), nullable=True)    # Compartir
 
 class AdminLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -490,6 +491,73 @@ def api_files():
     } for f in archivos]
     return jsonify({'files': files_list})
 
+
+# ==================== CARPETAS ====================
+class Folder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+@app.route('/folders')
+@login_required
+def folders():
+    carpetas = Folder.query.filter_by(user_id=current_user.id).all()
+    archivos = File.query.filter_by(user_id=current_user.id, folder_id=None).filter(File.deleted_at.is_(None)).all()
+    return render_template('carpetas.html', user=current_user, folders=carpetas, files=archivos, folder=None)
+
+@app.route('/folders/<int:folder_id>')
+@login_required
+def folder_view(folder_id):
+    carpeta = Folder.query.get_or_404(folder_id)
+    if carpeta.user_id != current_user.id:
+        return redirect(url_for('dashboard'))
+    subcarpetas = Folder.query.filter_by(user_id=current_user.id).all()
+    archivos = File.query.filter_by(user_id=current_user.id, folder_id=folder_id).filter(File.deleted_at.is_(None)).all()
+    return render_template('carpetas.html', user=current_user, folders=[], files=archivos, folder=carpeta)
+
+@app.route('/folders/create', methods=['POST'])
+@login_required
+def folder_create():
+    data = request.get_json()
+    name = data.get('name', '').strip()
+    if not name:
+        return jsonify({'success': False})
+    carpeta = Folder(name=name, user_id=current_user.id)
+    db.session.add(carpeta)
+    db.session.commit()
+    return jsonify({'success': True, 'id': carpeta.id})
+
+@app.route('/folders/delete/<int:folder_id>', methods=['POST'])
+@login_required
+def folder_delete(folder_id):
+    carpeta = Folder.query.get_or_404(folder_id)
+    if carpeta.user_id != current_user.id:
+        return jsonify({'success': False})
+    File.query.filter_by(folder_id=folder_id).update({'folder_id': None})
+    db.session.delete(carpeta)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/folders')
+@login_required
+def api_folders():
+    carpetas = Folder.query.filter_by(user_id=current_user.id).all()
+    return jsonify({'folders': [{'id': f.id, 'name': f.name} for f in carpetas]})
+
+@app.route('/files/move', methods=['POST'])
+@login_required
+def file_move():
+    data = request.get_json()
+    file_id = data.get('file_id')
+    folder_id = data.get('folder_id')
+    archivo = File.query.get_or_404(file_id)
+    if archivo.user_id != current_user.id:
+        return jsonify({'success': False})
+    archivo.folder_id = folder_id
+    db.session.commit()
+    return jsonify({'success': True})
+
 # ==================== PANEL DE ADMINISTRACIÓN ====================
 @app.route('/admin')
 @login_required
@@ -628,7 +696,7 @@ with app.app_context():
     try:
         conn = sqlite3.connect('database.db')
         cursor = conn.cursor()
-        for col, tipo in [('deleted_at','DATETIME'),('is_favorite','BOOLEAN DEFAULT 0'),('share_token','VARCHAR(64)')]:
+        for col, tipo in [('deleted_at','DATETIME'),('is_favorite','BOOLEAN DEFAULT 0'),('share_token','VARCHAR(64)'),('folder_id','INTEGER')]:
             try:
                 cursor.execute(f'ALTER TABLE file ADD COLUMN {col} {tipo}')
             except:
@@ -644,7 +712,7 @@ with app.app_context():
     try:
         conn = sqlite3.connect('database.db')
         cursor = conn.cursor()
-        for col, tipo in [('deleted_at','DATETIME'),('is_favorite','BOOLEAN DEFAULT 0'),('share_token','VARCHAR(64)')]:
+        for col, tipo in [('deleted_at','DATETIME'),('is_favorite','BOOLEAN DEFAULT 0'),('share_token','VARCHAR(64)'),('folder_id','INTEGER')]:
             try:
                 cursor.execute(f'ALTER TABLE file ADD COLUMN {col} {tipo}')
             except:
