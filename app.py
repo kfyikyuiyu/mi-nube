@@ -706,22 +706,6 @@ with app.app_context():
     except:
         pass
     create_owner()
-    db.create_all()
-    # Migración de columnas nuevas
-    import sqlite3
-    try:
-        conn = sqlite3.connect('database.db')
-        cursor = conn.cursor()
-        for col, tipo in [('deleted_at','DATETIME'),('is_favorite','BOOLEAN DEFAULT 0'),('share_token','VARCHAR(64)'),('folder_id','INTEGER')]:
-            try:
-                cursor.execute(f'ALTER TABLE file ADD COLUMN {col} {tipo}')
-            except:
-                pass
-        conn.commit()
-        conn.close()
-    except:
-        pass
-    create_owner()
     create_owner()
     print("=" * 50)
     print("✅ MI NUBE - SERVIDOR LISTO")
