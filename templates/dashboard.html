@@ -447,6 +447,55 @@
         grid-template-columns: 2fr 0.8fr 0.8fr 70px;
     }
 }
+
+/* Menú clic derecho */
+.context-menu {
+    position: fixed;
+    background: #151e2d;
+    border: 1px solid #2d3a4a;
+    border-radius: 10px;
+    padding: 0.4rem;
+    z-index: 99999;
+    min-width: 180px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    display: none;
+}
+.context-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+}
+.context-item:hover {
+    background: rgba(59,130,246,0.15);
+    color: #60a5fa;
+}
+.context-divider {
+    height: 1px;
+    background: #1e2a3a;
+    margin: 0.3rem 0;
+}
+/* Modal carpeta */
+.folder-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 99998;
+    align-items: center;
+    justify-content: center;
+}
+.folder-modal-box {
+    background: #151e2d;
+    border: 1px solid #1e2a3a;
+    border-radius: 16px;
+    padding: 2rem;
+    width: 380px;
+}
 </style>
 
 <script>
@@ -506,11 +555,12 @@
                 <div class="ft-date">${file.date}</div>
                 <div><span class="type-badge ${file.type}">${file.type}</span></div>
                 <div class="ft-actions">
-                    <button class="fa-btn" onclick="previewFile(${file.id},'${file.type}','${file.name}')">👁️</button>
-                    <button class="fa-btn" onclick="toggleFavorite(${file.id},this)">${file.is_favorite?'⭐':'☆'}</button>
-                    <button class="fa-btn" onclick="shareFile(${file.id})">🔗</button>
-                    <button class="fa-btn" onclick="downloadFile(${file.id})">⬇️</button>
-                    <button class="fa-btn" onclick="deleteFile(${file.id})">🗑️</button>
+                    <button class="fa-btn" title="Preview" onclick="previewFile(${file.id},'${file.type}','${file.name}')">👁️</button>
+                    <button class="fa-btn" title="Favorito" onclick="toggleFavorite(${file.id},this)">${file.is_favorite?'⭐':'☆'}</button>
+                    <button class="fa-btn" title="Mover" onclick="moveFileCtx(${file.id})">📂</button>
+                    <button class="fa-btn" title="Compartir" onclick="shareFile(${file.id})">🔗</button>
+                    <button class="fa-btn" title="Descargar" onclick="downloadFile(${file.id})">⬇️</button>
+                    <button class="fa-btn" title="Papelera" onclick="deleteFile(${file.id})">🗑️</button>
             </div>
         `).join('');
         
@@ -720,6 +770,39 @@ async function toggleFavorite(id,btn){const r=await fetch('/toggle_favorite/'+id
         {% endif %}
     });
 </script>
+
+<!-- Menú clic derecho -->
+<div class="context-menu" id="contextMenu">
+    <div class="context-item" onclick="ctxNewFolder()">📁 Nueva carpeta</div>
+    <div class="context-item" onclick="ctxUpload()">⬆️ Subir archivo aquí</div>
+    <div class="context-divider"></div>
+    <div class="context-item" onclick="window.location.href='/folders'">📂 Ver carpetas</div>
+</div>
+
+<!-- Modal nueva carpeta -->
+<div class="folder-modal" id="folderModal">
+    <div class="folder-modal-box">
+        <h3 style="margin-bottom:1rem;">📁 Nueva carpeta</h3>
+        <input id="folderNameInput" type="text" placeholder="Nombre de la carpeta"
+            style="width:100%;padding:0.7rem;background:#0d1320;border:1px solid #2d3a4a;border-radius:10px;color:#e8edf5;font-size:0.9rem;margin-bottom:1rem;outline:none;">
+        <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+            <button onclick="closeFolderModal()" style="padding:0.5rem 1rem;background:transparent;border:1px solid #2d3a4a;color:#9ca3af;border-radius:8px;cursor:pointer;">Cancelar</button>
+            <button onclick="createFolderFromMenu()" style="padding:0.5rem 1rem;background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;color:white;border-radius:8px;cursor:pointer;font-weight:600;">Crear</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal mover archivo -->
+<div class="folder-modal" id="moveModal">
+    <div class="folder-modal-box">
+        <h3 style="margin-bottom:1rem;">📂 Mover a carpeta</h3>
+        <div id="moveFolderList" style="max-height:250px;overflow-y:auto;margin-bottom:1rem;"></div>
+        <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+            <button onclick="closeMoveModal()" style="padding:0.5rem 1rem;background:transparent;border:1px solid #2d3a4a;color:#9ca3af;border-radius:8px;cursor:pointer;">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 <div id="previewModal" onclick="if(event.target===this)closePreview()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:2rem;">
     <div style="background:#0d1117;border:1px solid #1e2a3a;border-radius:16px;padding:1.5rem;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
